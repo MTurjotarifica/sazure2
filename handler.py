@@ -1,41 +1,28 @@
-import slack
-from slack_sdk import WebClient
-from slack_sdk.errors import SlackApiError
-from slackeventsapi import SlackEventAdapter
-# from vis_functions import *
-from slack_sdk.signature import SignatureVerifier
+import logging
 import os
-import pandas as pd
-import numpy as np
 import json
-import urllib
-from flask import Flask, request, Response
+import requests
 
+import azure.functions as func
 
+def main(req: func.HttpRequest) -> func.HttpResponse:
+    # Verify the Slack request
+    if not req.headers.get("X-Slack-Signature") or not req.headers.get("X-Slack-Request-Timestamp"):
+        return func.HttpResponse("Verification failed", status_code=400)
 
+    # Parse the request body
+    request_body = req.get_json()
+    command = request_body["command"]
+    text = request_body["text"]
 
-def lambda_handler(event, context):
-    app = Flask(__name__)
-    slack_event_adapter = SlackEventAdapter(
-    os.environ['SIGNING_SECRET'], '/slack/events', app)
+    # Handle the command
+    if command == "/mycommand":
+        # Your code to handle the command goes here
+        # ...
+        response = {
+            "response_type": "in_channel",
+            "text": "Your command was processed successfully!"
+        }
+        return func.HttpResponse(json.dumps(response), mimetype="application/json")
 
-    #getting slack_bot_token from our stored environment variable
-    client = WebClient(token=os.environ['SLACK_TOKEN'])
-    #obtains bot id
-    BOT_ID = client.api_call("auth.test")['user_id'] #gives us the bot id
-    signature_verifier = SignatureVerifier(os.environ["SIGNING_SECRET"])
-    @app.route('/slack/interactive-endpoint', methods=['GET','POST'])
-    def interactive_trigger():
-        print("trigger works")
-     
-    @app.route('/hello', methods=['POST'])
-    def hello():
-        
-        print("hello works")
-        client.chat_postMessage(channel='#random', 
-                                            text="hello world  ",
-                                            )
-        #returning empty string with 200 response
-        return '', 200
-
-
+    return func.HttpResponse("Unknown command", status_code=400)
