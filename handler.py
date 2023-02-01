@@ -26,7 +26,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     text = request_body["text"]
 
     # Handle the command
-    if command == "/mycommand":
+    if command == "/hello":
         # Your code to handle the command goes here
         # ...
         response = {
