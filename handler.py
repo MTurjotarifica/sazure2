@@ -4,11 +4,21 @@ import json
 import requests
 
 import azure.functions as func
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
+from slack_sdk.signature import SignatureVerifier
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
-    # Verify the Slack request
-    if not req.headers.get("X-Slack-Signature") or not req.headers.get("X-Slack-Request-Timestamp"):
-        return func.HttpResponse("Verification failed", status_code=400)
+    # Verify the Slack request signature
+    signature_verifier = SignatureVerifier(os.environ["SLACK_SIGNING_SECRET"])
+    try:
+        signature_verifier.validate(
+            req.headers.get("X-Slack-Request-Timestamp"),
+            req.headers.get("X-Slack-Signature"),
+            req.get_body()
+        )
+    except Exception as e:
+        return func.HttpResponse("Signature verification failed", status_code=400)
 
     # Parse the request body
     request_body = req.get_json()
